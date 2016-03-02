@@ -86,7 +86,7 @@
 			},
 			init : function() {
 				if (typeof (EventSource) !== undefined) {
-					// NotificationView.registerSSE();
+					NotificationView.registerSSE();
 				} else {
 					NotificationView.NotificationGetAllCount();
 				}

@@ -119,14 +119,13 @@ public class UserService {
 		final Gson gson = new GsonBuilder().setPrettyPrinting()
 				.registerTypeAdapter(Multimap.class, multimapAdapter).create();
 
-		final String userPositions = gson.toJson(userProfileDAO
+		return gson.toJson(userProfileDAO
 				.findUserPositionDetailsForAProposal(userIds));
-		return userPositions;
 	}
 
 	@POST
 	@Path("/GetUsersList")
-	public List<UserInfo> produceUsersJSON(String message)
+	public String produceUsersJSON(String message)
 			throws JsonGenerationException, JsonMappingException, IOException {
 		List<UserInfo> users = new ArrayList<UserInfo>();
 
@@ -182,7 +181,12 @@ public class UserService {
 
 		users = userProfileDAO.findAllForUserGrid(offset, limit, userName,
 				college, department, positionType, positionTitle, isActive);
-		return users;
+
+		// final Gson gson = new GsonBuilder().setPrettyPrinting().create();
+		// return gson.toJson(users);
+
+		return mapper.writerWithDefaultPrettyPrinter()
+				.writeValueAsString(users);
 	}
 
 	@POST
@@ -328,7 +332,7 @@ public class UserService {
 
 	@POST
 	@Path("/GetUserAuditLogList")
-	public List<AuditLogInfo> produceUserAuditLogJSON(String message)
+	public String produceUserAuditLogJSON(String message)
 			throws JsonGenerationException, JsonMappingException, IOException,
 			ParseException {
 		List<AuditLogInfo> userAuditLogs = new ArrayList<AuditLogInfo>();
@@ -384,7 +388,8 @@ public class UserService {
 		// users = (ArrayList<UserInfo>) userProfileDAO.findAllForUserGrid();
 		// response = JSONTansformer.ConvertToJSON(users);
 
-		return userAuditLogs;
+		return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(
+				userAuditLogs);
 	}
 
 	@POST
@@ -1763,7 +1768,8 @@ public class UserService {
 
 	@POST
 	@Path("/GetAllUserDropdown")
-	public HashMap<String, String> getAllUsers() throws UnknownHostException {
+	public String getAllUsers() throws UnknownHostException,
+			JsonProcessingException {
 		HashMap<String, String> users = new HashMap<String, String>();
 		// List<UserProfile> userprofiles = userProfileDAO.findAllActiveUsers();
 		List<UserProfile> userprofiles = userProfileDAO
@@ -1771,7 +1777,11 @@ public class UserService {
 		for (UserProfile userProfile : userprofiles) {
 			users.put(userProfile.getId().toString(), userProfile.getFullName());
 		}
-		return users;
+
+		ObjectMapper mapper = new ObjectMapper();
+
+		return mapper.writerWithDefaultPrettyPrinter()
+				.writeValueAsString(users);
 	}
 
 	@POST
@@ -1793,9 +1803,7 @@ public class UserService {
 		final Gson gson = new GsonBuilder().setPrettyPrinting()
 				.registerTypeAdapter(Multimap.class, multimapAdapter).create();
 
-		final String userPositions = gson.toJson(userProfileDAO
-				.findAllPositionDetailsForAUser(id));
-		return userPositions;
+		return gson.toJson(userProfileDAO.findAllPositionDetailsForAUser(id));
 	}
 
 	@POST

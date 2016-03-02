@@ -551,11 +551,9 @@ public class ProposalService {
 			NotifyAllExistingInvestigators(proposalId, projectTitle, proposal,
 					notificationMessage, "Proposal", true);
 
-			return Response.status(200).type(MediaType.APPLICATION_JSON)
-					.entity(true).build();
+			return Response.status(200).entity(true).build();
 		} else {
-			return Response.status(403).type(MediaType.APPLICATION_JSON)
-					.entity("DENY").build();
+			return Response.status(403).entity("DENY").build();
 		}
 
 	}
@@ -3111,8 +3109,7 @@ public class ProposalService {
 				}
 			}
 		}
-		return Response.status(200).type(MediaType.APPLICATION_JSON)
-				.entity(true).build();
+		return Response.status(200).entity(true).build();
 	}
 
 	private void NotifyAllExistingInvestigators(String proposalID,
@@ -3307,23 +3304,20 @@ public class ProposalService {
 				// Device type
 				// device-type
 
-				String decision = ac.getXACMLdecision(attrMap);
-				if (decision.equals("Permit")) {
-					return Response.status(200)
-							.type(MediaType.APPLICATION_JSON).entity(true)
-							.build();
-				} else {
-					return Response.status(403)
-							.type(MediaType.APPLICATION_JSON)
-							.entity("Your permission is: " + decision).build();
-				}
+				// String decision = ac.getXACMLdecision(attrMap);
+				// if (decision.equals("Permit")) {
+				return Response.status(200).entity(true).build();
+				// } else {
+				// return Response.status(403)
+				// .entity("Your permission is: " + decision).build();
+				// }
 			} else {
-				return Response.status(403).type(MediaType.APPLICATION_JSON)
+				return Response.status(403)
 						.entity("No User Permission Attributes are send!")
 						.build();
 			}
 		} else {
-			return Response.status(403).type(MediaType.APPLICATION_JSON)
+			return Response.status(403)
 					.entity("No User Permission Attributes are send!").build();
 		}
 	}
