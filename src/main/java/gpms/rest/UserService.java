@@ -48,6 +48,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bson.types.ObjectId;
 import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.mongodb.morphia.Morphia;
 
@@ -1398,21 +1399,61 @@ public class UserService {
 		// userPositionType,
 		// userPositionTitle, userIsAdmin);
 
-		new SearchTwitTask(BROADCASTER, userProfileID, userCollege,
-				userDepartment, userPositionType, userPositionTitle,
-				userIsAdmin);
+		// OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		// eventBuilder.name("notification")
+		// .mediaType(MediaType.APPLICATION_JSON_TYPE)
+		// // .id(UUID.randomUUID().toString())
+		// .data(String.class,
+		// notificationDAO.findAllNotificationCountAUser(
+		// userProfileID, userCollege, userDepartment,
+		// userPositionType, userPositionTitle,
+		// userIsAdmin));
+
+		// WARNING: IF I SET THE NAME OF THE EVENT IT DOES NOT WORK
+		// eventBuilder.name("message");
+
+		// eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
+		// eventBuilder.data(String.class, notificationDAO
+		// .findAllNotificationCountAUser(userProfileID, userCollege,
+		// userDepartment, userPositionType, userPositionTitle,
+		// userIsAdmin));
+
+		// OutboundEvent event = eventBuilder.build();
+		// BROADCASTER.broadcast(event);
+
+		// new SearchTwitTask(BROADCASTER, userProfileID, userCollege,
+		// userDepartment, userPositionType, userPositionTitle,
+		// userIsAdmin);
+
+		// final EventOutput seq = new EventOutput();
+
+		final long notificationCount = notificationDAO
+				.findAllNotificationCountAUser(userProfileID, userCollege,
+						userDepartment, userPositionType, userPositionTitle,
+						userIsAdmin);
+
+		new Thread() {
+			public void run() {
+				OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+				eventBuilder.name("notification")
+						.mediaType(MediaType.APPLICATION_JSON_TYPE)
+						// .id(UUID.randomUUID().toString())
+						.data(String.class, notificationCount);
+				OutboundEvent event = eventBuilder.build();
+				BROADCASTER.broadcast(event);
+			}
+		}.start();
 
 		// UserProfile user = userProfileDAO.findByUserAccount(newAccount);
 		// System.out.println(user);
 		response = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(
-				"Success");
+				true);
 		return response;
 
 	}
 
 	@GET
 	@Produces("text/event-stream")
-	@Path("/hang")
 	public EventOutput getMessages() {
 		EventOutput eventOutput = new EventOutput();
 		BROADCASTER.add(eventOutput);

@@ -123,7 +123,6 @@ public class NotificationService {
 			throws JsonProcessingException, IOException, ParseException {
 		response.setContentType("text/event-stream, charset=UTF-8");
 		PrintWriter out = response.getWriter();
-		// while (true) {
 		HttpSession session = request.getSession();
 		String userProfileID = new String();
 		String userCollege = new String();
@@ -168,13 +167,6 @@ public class NotificationService {
 		out.print("event: notification\n");
 		out.print("data: " + notificationCount + "\n\n");
 		out.flush();
-		// try {
-		// Thread.sleep(1000);
-		// } catch (InterruptedException e) {
-		// e.printStackTrace();
-		// }
-		// }
-
 	}
 
 	@POST
