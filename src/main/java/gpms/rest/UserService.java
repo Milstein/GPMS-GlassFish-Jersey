@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -43,12 +45,11 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.mongodb.morphia.Morphia;
-
-import com.mongodb.MongoClient;
-
 import org.apache.commons.lang3.RandomStringUtils;
 import org.bson.types.ObjectId;
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.SseBroadcaster;
+import org.mongodb.morphia.Morphia;
 
 import com.ebay.xcelite.Xcelite;
 import com.ebay.xcelite.sheet.XceliteSheet;
@@ -61,6 +62,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Multimap;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.mongodb.MongoClient;
 
 @Path("/users")
 @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML,
@@ -78,6 +80,13 @@ public class UserService {
 	NotificationDAO notificationDAO = null;
 
 	DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
+	// private SseBroadcaster broadcaster = new SseBroadcaster();
+
+	private static final SseBroadcaster BROADCASTER = new SseBroadcaster();
+
+	private static final ScheduledExecutorService sch = Executors
+			.newSingleThreadScheduledExecutor();
 
 	public UserService() {
 		mongoClient = MongoDBConnector.getMongo();
@@ -1278,15 +1287,10 @@ public class UserService {
 		String userProfileID = new String();
 		@SuppressWarnings("unused")
 		String userName = new String();
-		@SuppressWarnings("unused")
 		Boolean userIsAdmin = false;
-		@SuppressWarnings("unused")
 		String userCollege = new String();
-		@SuppressWarnings("unused")
 		String userDepartment = new String();
-		@SuppressWarnings("unused")
 		String userPositionType = new String();
-		@SuppressWarnings("unused")
 		String userPositionTitle = new String();
 		if (root != null && root.has("gpmsCommonObj")) {
 			JsonNode commonObj = root.get("gpmsCommonObj");
@@ -1390,12 +1394,29 @@ public class UserService {
 			}
 		}
 
+		// broadcast(userProfileID, userCollege, userDepartment,
+		// userPositionType,
+		// userPositionTitle, userIsAdmin);
+
+		new SearchTwitTask(BROADCASTER, userProfileID, userCollege,
+				userDepartment, userPositionType, userPositionTitle,
+				userIsAdmin);
+
 		// UserProfile user = userProfileDAO.findByUserAccount(newAccount);
 		// System.out.println(user);
 		response = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(
 				"Success");
 		return response;
 
+	}
+
+	@GET
+	@Produces("text/event-stream")
+	@Path("/hang")
+	public EventOutput getMessages() {
+		EventOutput eventOutput = new EventOutput();
+		BROADCASTER.add(eventOutput);
+		return eventOutput;
 	}
 
 	@POST
