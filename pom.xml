@@ -114,12 +114,13 @@
 		<dependency>
 			<groupId>org.glassfish.jersey.containers</groupId>
 			<!-- For Jersey server -->
-			<artifactId>jersey-container-servlet-core</artifactId>
+			<!-- <artifactId>jersey-container-servlet-core</artifactId> -->
 			<!-- For Grizzly server Uncomment following line -->
 			<!-- <artifactId>jersey-container-grizzly2-http</artifactId> -->
 
 			<!-- use the following artifactId if you don't need servlet 2.x compatibility -->
-			<!-- artifactId>jersey-container-servlet</artifactId -->
+			<artifactId>jersey-container-servlet</artifactId>
+
 		</dependency>
 
 		<!-- uncomment this to get JSON support <dependency> -->

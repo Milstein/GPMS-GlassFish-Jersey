@@ -30,10 +30,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.FormParam;
@@ -50,6 +53,7 @@ import org.bson.types.ObjectId;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.glassfish.jersey.media.sse.SseBroadcaster;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.mongodb.morphia.Morphia;
 
 import com.ebay.xcelite.Xcelite;
@@ -929,7 +933,13 @@ public class UserService {
 
 	@POST
 	@Path("/SaveUpdateUser")
-	public String saveUpdateUser(String message) throws Exception {
+	// @Produces("text/event-stream")
+	public String saveUpdateUser(String message,
+			@Context HttpServletRequest request,
+			@Context HttpServletResponse response) throws Exception {
+		// response.setContentType("text/event-stream, charset=UTF-8");
+		// PrintWriter out = response.getWriter();
+
 		String userID = new String();
 		UserAccount newAccount = new UserAccount();
 		UserProfile newProfile = new UserProfile();
@@ -937,8 +947,6 @@ public class UserService {
 		UserAccount existingUserAccount = new UserAccount();
 		UserProfile existingUserProfile = new UserProfile();
 		UserProfile oldUserProfile = new UserProfile();
-
-		String response = new String();
 
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode root = mapper.readTree(message);
@@ -1395,6 +1403,15 @@ public class UserService {
 			}
 		}
 
+		final long notificationCount = notificationDAO
+				.findAllNotificationCountAUser(userProfileID, userCollege,
+						userDepartment, userPositionType, userPositionTitle,
+						userIsAdmin);
+
+		// out.print("event: notification\n");
+		// out.print("data: " + Long.toString(notificationCount) + "\n\n");
+		// out.flush();
+
 		// broadcast(userProfileID, userCollege, userDepartment,
 		// userPositionType,
 		// userPositionTitle, userIsAdmin);
@@ -1427,36 +1444,144 @@ public class UserService {
 
 		// final EventOutput seq = new EventOutput();
 
+		// final long notificationCount = notificationDAO
+		// .findAllNotificationCountAUser(userProfileID, userCollege,
+		// userDepartment, userPositionType, userPositionTitle,
+		// userIsAdmin);
+
+		// new Thread() {
+		// public void run() {
+		// OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		// eventBuilder.name("notification")
+		// .mediaType(MediaType.APPLICATION_JSON_TYPE)
+		// // .id(UUID.randomUUID().toString())
+		// .data(String.class, Long.toString(notificationCount));
+		// OutboundEvent event = eventBuilder.build();
+		// BROADCASTER.broadcast(event);
+		// }
+		// }.start();
+
+		BROADCASTER.broadcast(new OutboundEvent.Builder().name("notification")
+				.data(String.class, Long.toString(notificationCount)).build());
+		System.out.println("Called Broadcasting ");
+
+		// new Thread(new Runnable() {
+		// @Override
+		// public void run() {
+		// try {
+		//
+		// // final OutboundEvent.Builder eventBuilder = new
+		// // OutboundEvent.Builder();
+		// // eventBuilder.data(String.class, "100");
+		// // final OutboundEvent event = eventBuilder.build();
+		// // eventOutput.write(event);
+		//
+		// OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		// eventBuilder
+		// .name("notification")
+		// .mediaType(MediaType.APPLICATION_JSON_TYPE)
+		// .id(UUID.randomUUID().toString())
+		// .data(String.class,
+		// Long.toString(notificationCount));
+		// OutboundEvent event = eventBuilder.build();
+		// BROADCASTER.broadcast(event);
+		// } catch (Exception e) {
+		// e.printStackTrace();
+		// }
+		// }
+		// }).start();
+
+		// UserProfile user = userProfileDAO.findByUserAccount(newAccount);
+		// System.out.println(user);
+		String res = mapper.writerWithDefaultPrettyPrinter()
+				.writeValueAsString(true);
+		return res;
+
+	}
+
+	// @GET
+	// @Path("/events")
+	// @Produces("text/event-stream")
+	// public EventOutput getMessages() {
+	// EventOutput eventOutput = new EventOutput();
+	// BROADCASTER.add(eventOutput);
+	// return eventOutput;
+	// }
+
+	@GET
+	@Path("/events")
+	@Produces(SseFeature.SERVER_SENT_EVENTS)
+	public EventOutput getServerSentEvents(@Context HttpServletRequest request,
+			@Context HttpServletResponse response) throws ParseException {
+		HttpSession session = request.getSession();
+		String userProfileID = new String();
+		String userCollege = new String();
+		String userDepartment = new String();
+		String userPositionType = new String();
+		String userPositionTitle = new String();
+		Boolean userIsAdmin = false;
+
+		if (session.getAttribute("userProfileId") != null) {
+			userProfileID = (String) session.getAttribute("userProfileId");
+		}
+		// if (session.getAttribute("gpmsUserName") != null) {
+		// userName = (String) session.getAttribute("gpmsUserName");
+		// }
+
+		if (session.getAttribute("userCollege") != null) {
+			userCollege = (String) session.getAttribute("userCollege");
+		}
+
+		if (session.getAttribute("userDepartment") != null) {
+			userDepartment = (String) session.getAttribute("userDepartment");
+		}
+
+		if (session.getAttribute("userPositionType") != null) {
+			userPositionType = (String) session
+					.getAttribute("userPositionType");
+		}
+
+		if (session.getAttribute("userPositionTitle") != null) {
+			userPositionTitle = (String) session
+					.getAttribute("userPositionTitle");
+		}
+
+		if (session.getAttribute("isAdmin") != null) {
+			userIsAdmin = (Boolean) session.getAttribute("isAdmin");
+		}
+
 		final long notificationCount = notificationDAO
 				.findAllNotificationCountAUser(userProfileID, userCollege,
 						userDepartment, userPositionType, userPositionTitle,
 						userIsAdmin);
 
-		new Thread() {
-			public void run() {
-				OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-				eventBuilder.name("notification")
-						.mediaType(MediaType.APPLICATION_JSON_TYPE)
-						// .id(UUID.randomUUID().toString())
-						.data(String.class, notificationCount);
-				OutboundEvent event = eventBuilder.build();
-				BROADCASTER.broadcast(event);
+		final EventOutput eventOutput = new EventOutput();
+		// new Thread(new Runnable() {
+		// @Override
+		// public void run() {
+		try {
+			// for (int i = 0; i < 10; i++) {
+			// ... code that waits 1 second
+			final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+			eventBuilder.name("notification");
+			eventBuilder.data(String.class, Long.toString(notificationCount));
+			final OutboundEvent event = eventBuilder.build();
+			eventOutput.write(event);
+
+			System.out.println("Called Event from client ");
+			// }
+		} catch (IOException e) {
+			throw new RuntimeException("Error when writing the event.", e);
+		} finally {
+			try {
+				eventOutput.close();
+			} catch (IOException ioClose) {
+				throw new RuntimeException(
+						"Error when closing the event output.", ioClose);
 			}
-		}.start();
-
-		// UserProfile user = userProfileDAO.findByUserAccount(newAccount);
-		// System.out.println(user);
-		response = mapper.writerWithDefaultPrettyPrinter().writeValueAsString(
-				true);
-		return response;
-
-	}
-
-	@GET
-	@Produces("text/event-stream")
-	public EventOutput getMessages() {
-		EventOutput eventOutput = new EventOutput();
-		BROADCASTER.add(eventOutput);
+		}
+		// }
+		// }).start();
 		return eventOutput;
 	}
 

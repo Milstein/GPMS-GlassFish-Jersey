@@ -28,9 +28,12 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 
+import org.glassfish.jersey.media.sse.EventOutput;
+import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseFeature;
 import org.mongodb.morphia.Morphia;
-import com.mongodb.MongoClient;
 
+import com.mongodb.MongoClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,7 +73,7 @@ public class NotificationService {
 
 	@POST
 	@Path("/NotificationGetAllCount")
-	public long notificationGetAllCountForAUser(String message)
+	public String notificationGetAllCountForAUser(String message)
 			throws JsonProcessingException, IOException, ParseException {
 		ObjectMapper mapper = new ObjectMapper();
 		JsonNode root = mapper.readTree(message);
@@ -108,10 +111,87 @@ public class NotificationService {
 			userPositionTitle = commonObj.get("UserPositionTitle").textValue();
 		}
 
-		return notificationDAO.findAllNotificationCountAUser(userProfileID,
-				userCollege, userDepartment, userPositionType,
-				userPositionTitle, userIsAdmin);
+		return Long.toString(notificationDAO.findAllNotificationCountAUser(
+				userProfileID, userCollege, userDepartment, userPositionType,
+				userPositionTitle, userIsAdmin));
 
+	}
+
+	@GET
+	@Path("/events")
+	@Produces(SseFeature.SERVER_SENT_EVENTS)
+	public EventOutput getServerSentEvents(@Context HttpServletRequest request,
+			@Context HttpServletResponse response) throws ParseException {
+		HttpSession session = request.getSession();
+		String userProfileID = new String();
+		String userCollege = new String();
+		String userDepartment = new String();
+		String userPositionType = new String();
+		String userPositionTitle = new String();
+		Boolean userIsAdmin = false;
+
+		if (session.getAttribute("userProfileId") != null) {
+			userProfileID = (String) session.getAttribute("userProfileId");
+		}
+		// if (session.getAttribute("gpmsUserName") != null) {
+		// userName = (String) session.getAttribute("gpmsUserName");
+		// }
+
+		if (session.getAttribute("userCollege") != null) {
+			userCollege = (String) session.getAttribute("userCollege");
+		}
+
+		if (session.getAttribute("userDepartment") != null) {
+			userDepartment = (String) session.getAttribute("userDepartment");
+		}
+
+		if (session.getAttribute("userPositionType") != null) {
+			userPositionType = (String) session
+					.getAttribute("userPositionType");
+		}
+
+		if (session.getAttribute("userPositionTitle") != null) {
+			userPositionTitle = (String) session
+					.getAttribute("userPositionTitle");
+		}
+
+		if (session.getAttribute("isAdmin") != null) {
+			userIsAdmin = (Boolean) session.getAttribute("isAdmin");
+		}
+
+		final long notificationCount = notificationDAO
+				.findAllNotificationCountAUser(userProfileID, userCollege,
+						userDepartment, userPositionType, userPositionTitle,
+						userIsAdmin);
+
+		final EventOutput eventOutput = new EventOutput();
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					// for (int i = 0; i < 10; i++) {
+					// ... code that waits 1 second
+					final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+					eventBuilder.name("notification");
+					eventBuilder.data(String.class,
+							Long.toString(notificationCount));
+					final OutboundEvent event = eventBuilder.build();
+					eventOutput.write(event);
+					// }
+				} catch (IOException e) {
+					throw new RuntimeException("Error when writing the event.",
+							e);
+				} finally {
+					try {
+						eventOutput.close();
+					} catch (IOException ioClose) {
+						throw new RuntimeException(
+								"Error when closing the event output.", ioClose);
+					}
+				}
+			}
+		}).start();
+		return eventOutput;
 	}
 
 	@GET
@@ -165,7 +245,7 @@ public class NotificationService {
 				userPositionTitle, userIsAdmin);
 
 		out.print("event: notification\n");
-		out.print("data: " + notificationCount + "\n\n");
+		out.print("data: " + Long.toString(notificationCount) + "\n\n");
 		out.flush();
 	}
 

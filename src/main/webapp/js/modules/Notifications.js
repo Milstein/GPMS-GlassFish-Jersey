@@ -126,12 +126,25 @@
 						});
 			},
 			registerSSE : function() {
-				var source = new EventSource(this.config.baseURL
-						+ "NotificationGetRealTimeCount");
+				// var source = new EventSource(this.config.baseURL
+				// + "NotificationGetRealTimeCount");
+				var source = new EventSource("REST/users/events");
 				source.addEventListener('notification', function(e) {
 					console.log("User " + e.data);
 					NotificationView.NotificationGetAllCountSuccess(e.data);
 				}, false);
+
+				source.onerror = function(event) {
+					console.log("error [" + source.readyState + "]");
+				};
+
+				source.onopen = function(event) {
+					console.log("eventsource opened!");
+				};
+
+				source.onmessage = function(event) {
+					console.log(event.data);
+				};
 			},
 			NotificationGetAllCount : function() {
 				this.config.method = "NotificationGetAllCount";
