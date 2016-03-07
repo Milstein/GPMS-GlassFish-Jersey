@@ -7,7 +7,7 @@ public class GPMSCommonInfo implements Serializable {
 	 * 
 	 */
 	private static final long serialVersionUID = 1L;
-	
+
 	private String userProfileID;
 	private String userName;
 	private boolean userIsAdmin;
@@ -15,6 +15,7 @@ public class GPMSCommonInfo implements Serializable {
 	private String userDepartment;
 	private String userPositionType;
 	private String userPositionTitle;
+	private int notificationCount = 0;
 
 	public GPMSCommonInfo() {
 	}
@@ -75,12 +76,22 @@ public class GPMSCommonInfo implements Serializable {
 		this.userPositionTitle = userPositionTitle;
 	}
 
+	public int getNotificationCount() {
+		return notificationCount;
+	}
+
+	public void setNotificationCount(int notificationCount) {
+		this.notificationCount = notificationCount;
+	}
+
 	@Override
 	public String toString() {
 		return "GPMSCommonInfo [userProfileID=" + userProfileID + ", userName="
 				+ userName + ", userIsAdmin=" + userIsAdmin + ", userCollege="
 				+ userCollege + ", userDepartment=" + userDepartment
 				+ ", userPositionType=" + userPositionType
-				+ ", userPositionTitle=" + userPositionTitle + "]";
+				+ ", userPositionTitle=" + userPositionTitle
+				+ ", notificationCount=" + notificationCount + "]";
 	}
+
 }

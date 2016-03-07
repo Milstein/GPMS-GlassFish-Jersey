@@ -126,14 +126,13 @@
 						});
 			},
 			registerSSE : function() {
-				var source = new EventSource(this.config.baseURL + "events");
-
-				// var source = new EventSource(this.config.baseURL
-				// + "NotificationGetRealTimeCount");
-				// var source = new EventSource("REST/users/events");
+				var source = new EventSource(this.config.baseURL
+						+ "NotificationGetRealTimeCount");
 				source.addEventListener('notification', function(e) {
 					console.log("User " + e.data);
-					NotificationView.NotificationGetAllCountSuccess(e.data);
+					if (e.data != "0") {
+						NotificationView.NotificationGetAllCount();
+					}
 				}, false);
 
 				source.onerror = function(event) {
@@ -159,7 +158,7 @@
 				return false;
 			},
 			NotificationGetAllCountSuccess : function(msg) {
-				if (msg !== "0") {
+				if (msg != "0") {
 					$("#spanNotifyInfo").html(msg);
 					$("#spanNotifyInfo").show();
 					p.notificationsNumber += parseInt(msg);

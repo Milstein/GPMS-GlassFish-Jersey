@@ -86,8 +86,6 @@ public class UserService {
 
 	// private SseBroadcaster broadcaster = new SseBroadcaster();
 
-	static final SseBroadcaster BROADCASTER = new SseBroadcaster();
-
 	private static final ScheduledExecutorService sch = Executors
 			.newSingleThreadScheduledExecutor();
 
@@ -1401,197 +1399,24 @@ public class UserService {
 			}
 		}
 
+		// Broadcasting SSE
+
 		final long notificationCount = notificationDAO
 				.findAllNotificationCountAUser(userProfileID, userCollege,
 						userDepartment, userPositionType, userPositionTitle,
 						userIsAdmin);
 
-		// out.print("event: notification\n");
-		// out.print("data: " + Long.toString(notificationCount) + "\n\n");
-		// out.flush();
-
-		// broadcast(userProfileID, userCollege, userDepartment,
-		// userPositionType,
-		// userPositionTitle, userIsAdmin);
-
-		// OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-		// eventBuilder.name("notification")
-		// .mediaType(MediaType.APPLICATION_JSON_TYPE)
-		// // .id(UUID.randomUUID().toString())
-		// .data(String.class,
-		// notificationDAO.findAllNotificationCountAUser(
-		// userProfileID, userCollege, userDepartment,
-		// userPositionType, userPositionTitle,
-		// userIsAdmin));
-
-		// WARNING: IF I SET THE NAME OF THE EVENT IT DOES NOT WORK
-		// eventBuilder.name("message");
-
-		// eventBuilder.mediaType(MediaType.APPLICATION_JSON_TYPE);
-		// eventBuilder.data(String.class, notificationDAO
-		// .findAllNotificationCountAUser(userProfileID, userCollege,
-		// userDepartment, userPositionType, userPositionTitle,
-		// userIsAdmin));
-
-		// OutboundEvent event = eventBuilder.build();
-		// BROADCASTER.broadcast(event);
-
-		// new SearchTwitTask(BROADCASTER, userProfileID, userCollege,
-		// userDepartment, userPositionType, userPositionTitle,
-		// userIsAdmin);
-
-		// final EventOutput seq = new EventOutput();
-
-		// final long notificationCount = notificationDAO
-		// .findAllNotificationCountAUser(userProfileID, userCollege,
-		// userDepartment, userPositionType, userPositionTitle,
-		// userIsAdmin);
-
-		// new Thread() {
-		// public void run() {
-		// OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-		// eventBuilder.name("notification")
-		// .mediaType(MediaType.APPLICATION_JSON_TYPE)
-		// // .id(UUID.randomUUID().toString())
-		// .data(String.class, Long.toString(notificationCount));
-		// OutboundEvent event = eventBuilder.build();
-		// BROADCASTER.broadcast(event);
-		// }
-		// }.start();
-
-		// BROADCASTER.broadcast(new
-		// OutboundEvent.Builder().name("notification")
-		// .data(String.class, Long.toString(notificationCount)).build());
-		System.out.println("Called Broadcasting ");
-
-		// new Thread(new Runnable() {
-		// @Override
-		// public void run() {
-		// try {
-		//
-		// // final OutboundEvent.Builder eventBuilder = new
-		// // OutboundEvent.Builder();
-		// // eventBuilder.data(String.class, "100");
-		// // final OutboundEvent event = eventBuilder.build();
-		// // eventOutput.write(event);
-		//
-		// OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-		// eventBuilder
-		// .name("notification")
-		// .mediaType(MediaType.APPLICATION_JSON_TYPE)
-		// .id(UUID.randomUUID().toString())
-		// .data(String.class,
-		// Long.toString(notificationCount));
-		// OutboundEvent event = eventBuilder.build();
-		// BROADCASTER.broadcast(event);
-		// } catch (Exception e) {
-		// e.printStackTrace();
-		// }
-		// }
-		// }).start();
-
 		OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
 		OutboundEvent event = eventBuilder.name("notification")
-				.mediaType(MediaType.TEXT_PLAIN_TYPE)
+				.mediaType(MediaType.TEXT_PLAIN_TYPE).id(userProfileID)
 				.data(String.class, Long.toString(notificationCount)).build();
 
-		BROADCASTER.broadcast(event);
+		NotificationService.BROADCASTER.broadcast(event);
 
-		// return "Message '" + message + "' has been broadcast.";
-
-		UserProfile user = userProfileDAO.findByUserAccount(newAccount);
-		System.out.println(user);
 		String res = mapper.writerWithDefaultPrettyPrinter()
 				.writeValueAsString(true);
 		return res;
 
-	}
-
-	@GET
-	@Path("/events")
-	// @Produces("text/event-stream")
-	@Produces(SseFeature.SERVER_SENT_EVENTS)
-	public EventOutput getMessages() {
-		EventOutput eventOutput = new EventOutput();
-		BROADCASTER.add(eventOutput);
-		return eventOutput;
-	}
-
-	@GET
-	@Path("/eventsOld")
-	@Produces(SseFeature.SERVER_SENT_EVENTS)
-	public EventOutput getServerSentEvents(@Context HttpServletRequest request,
-			@Context HttpServletResponse response) throws ParseException {
-		HttpSession session = request.getSession();
-		String userProfileID = new String();
-		String userCollege = new String();
-		String userDepartment = new String();
-		String userPositionType = new String();
-		String userPositionTitle = new String();
-		Boolean userIsAdmin = false;
-
-		if (session.getAttribute("userProfileId") != null) {
-			userProfileID = (String) session.getAttribute("userProfileId");
-		}
-		// if (session.getAttribute("gpmsUserName") != null) {
-		// userName = (String) session.getAttribute("gpmsUserName");
-		// }
-
-		if (session.getAttribute("userCollege") != null) {
-			userCollege = (String) session.getAttribute("userCollege");
-		}
-
-		if (session.getAttribute("userDepartment") != null) {
-			userDepartment = (String) session.getAttribute("userDepartment");
-		}
-
-		if (session.getAttribute("userPositionType") != null) {
-			userPositionType = (String) session
-					.getAttribute("userPositionType");
-		}
-
-		if (session.getAttribute("userPositionTitle") != null) {
-			userPositionTitle = (String) session
-					.getAttribute("userPositionTitle");
-		}
-
-		if (session.getAttribute("isAdmin") != null) {
-			userIsAdmin = (Boolean) session.getAttribute("isAdmin");
-		}
-
-		final long notificationCount = notificationDAO
-				.findAllNotificationCountAUser(userProfileID, userCollege,
-						userDepartment, userPositionType, userPositionTitle,
-						userIsAdmin);
-
-		final EventOutput eventOutput = new EventOutput();
-		// new Thread(new Runnable() {
-		// @Override
-		// public void run() {
-		try {
-			// for (int i = 0; i < 10; i++) {
-			// ... code that waits 1 second
-			final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-			eventBuilder.name("notification");
-			eventBuilder.data(String.class, Long.toString(notificationCount));
-			final OutboundEvent event = eventBuilder.build();
-			eventOutput.write(event);
-
-			System.out.println("Called Event from client ");
-			// }
-		} catch (IOException e) {
-			throw new RuntimeException("Error when writing the event.", e);
-		} finally {
-			try {
-				eventOutput.close();
-			} catch (IOException ioClose) {
-				throw new RuntimeException(
-						"Error when closing the event output.", ioClose);
-			}
-		}
-		// }
-		// }).start();
-		return eventOutput;
 	}
 
 	@POST

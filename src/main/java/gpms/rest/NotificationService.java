@@ -11,12 +11,12 @@ import gpms.model.UserAccount;
 import gpms.model.UserProfile;
 
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
+import javax.inject.Singleton;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -30,14 +30,16 @@ import javax.ws.rs.core.MediaType;
 
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
+import org.glassfish.jersey.media.sse.SseBroadcaster;
 import org.glassfish.jersey.media.sse.SseFeature;
 import org.mongodb.morphia.Morphia;
 
-import com.mongodb.MongoClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.MongoClient;
 
+@Singleton
 @Path("/notifications")
 @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 @Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
@@ -53,6 +55,8 @@ public class NotificationService {
 	NotificationDAO notificationDAO = null;
 
 	DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+
+	static final SseBroadcaster BROADCASTER = new SseBroadcaster();
 
 	public NotificationService() {
 		mongoClient = MongoDBConnector.getMongo();
@@ -118,101 +122,18 @@ public class NotificationService {
 	}
 
 	@GET
-	@Path("/eventsOld")
-	@Produces(SseFeature.SERVER_SENT_EVENTS)
-	public EventOutput getServerSentEvents(@Context HttpServletRequest request,
-			@Context HttpServletResponse response) throws ParseException {
-		HttpSession session = request.getSession();
-		String userProfileID = new String();
-		String userCollege = new String();
-		String userDepartment = new String();
-		String userPositionType = new String();
-		String userPositionTitle = new String();
-		Boolean userIsAdmin = false;
-
-		if (session.getAttribute("userProfileId") != null) {
-			userProfileID = (String) session.getAttribute("userProfileId");
-		}
-		// if (session.getAttribute("gpmsUserName") != null) {
-		// userName = (String) session.getAttribute("gpmsUserName");
-		// }
-
-		if (session.getAttribute("userCollege") != null) {
-			userCollege = (String) session.getAttribute("userCollege");
-		}
-
-		if (session.getAttribute("userDepartment") != null) {
-			userDepartment = (String) session.getAttribute("userDepartment");
-		}
-
-		if (session.getAttribute("userPositionType") != null) {
-			userPositionType = (String) session
-					.getAttribute("userPositionType");
-		}
-
-		if (session.getAttribute("userPositionTitle") != null) {
-			userPositionTitle = (String) session
-					.getAttribute("userPositionTitle");
-		}
-
-		if (session.getAttribute("isAdmin") != null) {
-			userIsAdmin = (Boolean) session.getAttribute("isAdmin");
-		}
-
-		final long notificationCount = notificationDAO
-				.findAllNotificationCountAUser(userProfileID, userCollege,
-						userDepartment, userPositionType, userPositionTitle,
-						userIsAdmin);
-
-		final EventOutput eventOutput = new EventOutput();
-		new Thread(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					// for (int i = 0; i < 10; i++) {
-					// ... code that waits 1 second
-					final OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
-					eventBuilder.name("notification");
-					eventBuilder.data(String.class,
-							Long.toString(notificationCount));
-					final OutboundEvent event = eventBuilder.build();
-					eventOutput.write(event);
-					// }
-				} catch (IOException e) {
-					throw new RuntimeException("Error when writing the event.",
-							e);
-				} finally {
-					try {
-						eventOutput.close();
-					} catch (IOException ioClose) {
-						throw new RuntimeException(
-								"Error when closing the event output.", ioClose);
-					}
-				}
-			}
-		}).start();
-		return eventOutput;
-	}
-
-	@GET
-	@Path("/events")
+	@Path("/NotificationGetRealTimeCount")
 	// @Produces("text/event-stream")
 	@Produces(SseFeature.SERVER_SENT_EVENTS)
-	public EventOutput getMessages() {
-		EventOutput eventOutput = new EventOutput();
-		UserService.BROADCASTER.add(eventOutput);
-		return eventOutput;
-	}
-
-	@GET
-	@Path("/NotificationGetRealTimeCount")
-	@Produces("text/event-stream")
-	public void notificationGetRealTimeCountForAUser(
+	public EventOutput notificationGetRealTimeCountForAUser(
 			@Context HttpServletRequest request,
 			@Context HttpServletResponse response)
 			throws JsonProcessingException, IOException, ParseException {
-		response.setContentType("text/event-stream, charset=UTF-8");
-		PrintWriter out = response.getWriter();
+		// response.setContentType("text/event-stream, charset=UTF-8");
+		// PrintWriter out = response.getWriter();
+
+		EventOutput eventOutput = new EventOutput();
+
 		HttpSession session = request.getSession();
 		String userProfileID = new String();
 		String userCollege = new String();
@@ -254,9 +175,16 @@ public class NotificationService {
 				userProfileID, userCollege, userDepartment, userPositionType,
 				userPositionTitle, userIsAdmin);
 
-		out.print("event: notification\n");
-		out.print("data: " + Long.toString(notificationCount) + "\n\n");
-		out.flush();
+		OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		eventBuilder.name("notification");
+		eventBuilder.id(userProfileID);
+		eventBuilder.data(String.class, Long.toString(notificationCount));
+		OutboundEvent event = eventBuilder.build();
+		eventOutput.write(event);
+
+		BROADCASTER.add(eventOutput);
+
+		return eventOutput;
 	}
 
 	@POST
