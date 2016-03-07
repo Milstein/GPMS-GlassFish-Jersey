@@ -84,11 +84,6 @@ public class UserService {
 
 	DateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
 
-	// private SseBroadcaster broadcaster = new SseBroadcaster();
-
-	private static final ScheduledExecutorService sch = Executors
-			.newSingleThreadScheduledExecutor();
-
 	public UserService() {
 		mongoClient = MongoDBConnector.getMongo();
 		morphia = new Morphia();
@@ -929,13 +924,7 @@ public class UserService {
 
 	@POST
 	@Path("/SaveUpdateUser")
-	// @Produces("text/event-stream")
-	public String saveUpdateUser(String message,
-			@Context HttpServletRequest request,
-			@Context HttpServletResponse response) throws Exception {
-		// response.setContentType("text/event-stream, charset=UTF-8");
-		// PrintWriter out = response.getWriter();
-
+	public String saveUpdateUser(String message) throws Exception {
 		String userID = new String();
 		UserAccount newAccount = new UserAccount();
 		UserProfile newProfile = new UserProfile();
@@ -1876,4 +1865,5 @@ public class UserService {
 		return userProfileDAO.getUserProposalCounts(userProfileID, userCollege,
 				userDepartment, userPositionType, userPositionTitle);
 	}
+	
 }

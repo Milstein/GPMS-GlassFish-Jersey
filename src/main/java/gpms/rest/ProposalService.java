@@ -1229,6 +1229,10 @@ public class ProposalService {
 										// This user is both PI and Research
 										// Administrator
 									}
+								} else {
+									newProposal.getProposalStatus().clear();
+									newProposal.getProposalStatus().add(
+											Status.WAITINGFORCHAIRAPPROVAL);
 								}
 
 								break;
@@ -2773,6 +2777,7 @@ public class ProposalService {
 			List<Appendix> appendixInfo = Arrays.asList(mapper.readValue(
 					proposalInfo.get("AppendixInfo").toString(),
 					Appendix[].class));
+			if (appendixInfo.size() != 0) {
 
 			String UPLOAD_PATH = new String();
 			try {
@@ -2834,6 +2839,7 @@ public class ProposalService {
 
 					newProposal.getAppendices().add(newAppendix);
 				}
+			}
 			}
 		}
 
@@ -3304,20 +3310,23 @@ public class ProposalService {
 				// Device type
 				// device-type
 
-				// String decision = ac.getXACMLdecision(attrMap);
-				// if (decision.equals("Permit")) {
-				return Response.status(200).entity(true).build();
-				// } else {
-				// return Response.status(403)
-				// .entity("Your permission is: " + decision).build();
-				// }
+				String decision = ac.getXACMLdecision(attrMap);
+				if (decision.equals("Permit")) {
+					return Response.status(200)
+							.type(MediaType.APPLICATION_JSON).entity(true)
+							.build();
+				} else {
+					return Response.status(403)
+							.type(MediaType.APPLICATION_JSON)
+							.entity("Your permission is: " + decision).build();
+				}
 			} else {
-				return Response.status(403)
+				return Response.status(403).type(MediaType.APPLICATION_JSON)
 						.entity("No User Permission Attributes are send!")
 						.build();
 			}
 		} else {
-			return Response.status(403)
+			return Response.status(403).type(MediaType.APPLICATION_JSON)
 					.entity("No User Permission Attributes are send!").build();
 		}
 	}
