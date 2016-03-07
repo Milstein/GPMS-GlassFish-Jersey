@@ -30,11 +30,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -88,7 +86,7 @@ public class UserService {
 
 	// private SseBroadcaster broadcaster = new SseBroadcaster();
 
-	private static final SseBroadcaster BROADCASTER = new SseBroadcaster();
+	static final SseBroadcaster BROADCASTER = new SseBroadcaster();
 
 	private static final ScheduledExecutorService sch = Executors
 			.newSingleThreadScheduledExecutor();
@@ -1461,8 +1459,9 @@ public class UserService {
 		// }
 		// }.start();
 
-		BROADCASTER.broadcast(new OutboundEvent.Builder().name("notification")
-				.data(String.class, Long.toString(notificationCount)).build());
+		// BROADCASTER.broadcast(new
+		// OutboundEvent.Builder().name("notification")
+		// .data(String.class, Long.toString(notificationCount)).build());
 		System.out.println("Called Broadcasting ");
 
 		// new Thread(new Runnable() {
@@ -1491,25 +1490,35 @@ public class UserService {
 		// }
 		// }).start();
 
-		// UserProfile user = userProfileDAO.findByUserAccount(newAccount);
-		// System.out.println(user);
+		OutboundEvent.Builder eventBuilder = new OutboundEvent.Builder();
+		OutboundEvent event = eventBuilder.name("notification")
+				.mediaType(MediaType.TEXT_PLAIN_TYPE)
+				.data(String.class, Long.toString(notificationCount)).build();
+
+		BROADCASTER.broadcast(event);
+
+		// return "Message '" + message + "' has been broadcast.";
+
+		UserProfile user = userProfileDAO.findByUserAccount(newAccount);
+		System.out.println(user);
 		String res = mapper.writerWithDefaultPrettyPrinter()
 				.writeValueAsString(true);
 		return res;
 
 	}
 
-	// @GET
-	// @Path("/events")
-	// @Produces("text/event-stream")
-	// public EventOutput getMessages() {
-	// EventOutput eventOutput = new EventOutput();
-	// BROADCASTER.add(eventOutput);
-	// return eventOutput;
-	// }
-
 	@GET
 	@Path("/events")
+	// @Produces("text/event-stream")
+	@Produces(SseFeature.SERVER_SENT_EVENTS)
+	public EventOutput getMessages() {
+		EventOutput eventOutput = new EventOutput();
+		BROADCASTER.add(eventOutput);
+		return eventOutput;
+	}
+
+	@GET
+	@Path("/eventsOld")
 	@Produces(SseFeature.SERVER_SENT_EVENTS)
 	public EventOutput getServerSentEvents(@Context HttpServletRequest request,
 			@Context HttpServletResponse response) throws ParseException {

@@ -118,7 +118,7 @@ public class NotificationService {
 	}
 
 	@GET
-	@Path("/events")
+	@Path("/eventsOld")
 	@Produces(SseFeature.SERVER_SENT_EVENTS)
 	public EventOutput getServerSentEvents(@Context HttpServletRequest request,
 			@Context HttpServletResponse response) throws ParseException {
@@ -191,6 +191,16 @@ public class NotificationService {
 				}
 			}
 		}).start();
+		return eventOutput;
+	}
+
+	@GET
+	@Path("/events")
+	// @Produces("text/event-stream")
+	@Produces(SseFeature.SERVER_SENT_EVENTS)
+	public EventOutput getMessages() {
+		EventOutput eventOutput = new EventOutput();
+		UserService.BROADCASTER.add(eventOutput);
 		return eventOutput;
 	}
 

@@ -126,9 +126,11 @@
 						});
 			},
 			registerSSE : function() {
+				var source = new EventSource(this.config.baseURL + "events");
+
 				// var source = new EventSource(this.config.baseURL
 				// + "NotificationGetRealTimeCount");
-				var source = new EventSource("REST/users/events");
+				// var source = new EventSource("REST/users/events");
 				source.addEventListener('notification', function(e) {
 					console.log("User " + e.data);
 					NotificationView.NotificationGetAllCountSuccess(e.data);
